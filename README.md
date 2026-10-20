@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/banner.svg" alt="supermealplanner-ios: tonight's plate, read off the counter." width="100%">
+</p>
+
 # SuperMealPlanner for iPhone
 
 The phone app for [SuperMealPlanner](https://github.com/GeiserX/SuperMealPlanner), a self-hosted
