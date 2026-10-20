@@ -65,4 +65,7 @@
 # - linear.api_key  → use LINEAR_API_KEY env var instead
 # - github.token    → use GITHUB_TOKEN env var instead
 
-sync.remote: "git+https://github.com/GeiserX/supermealplanner-ios.git"
+# Public repo: the tracker syncs only to this private remote, never to GitHub.
+sync.remote: "git+ssh://git@beads-tracker/giteaer/supermealplanner-ios-beads.git"
+# Every bd write is a Dolt commit, so a push always carries it.
+dolt.auto-commit: "on"
