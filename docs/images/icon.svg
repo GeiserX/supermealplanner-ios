@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="supermealplanner-ios">
+  <rect width="512" height="512" rx="112" fill="#df6d43"/>
+  <circle cx="256" cy="256" r="168" fill="#fff6ee" opacity=".15"/>
+  <circle cx="256" cy="256" r="126" fill="none" stroke="#fff6ee" stroke-width="24"/>
+  <g fill="#fff6ee">
+    <rect x="188" y="154" width="14" height="76" rx="7"/><rect x="210" y="154" width="14" height="76" rx="7"/><rect x="232" y="154" width="14" height="76" rx="7"/>
+    <path d="M186 206h62v30q0 24-18 32v98q0 13-13 13t-13-13v-98q-18-8-18-32z"/>
+    <path d="M306 158q28 0 28 54q0 38-16 46v105q0 12-14 12t-14-12V258q-16-8-16-46q0-54 28-54z"/>
+  </g>
+</svg>
