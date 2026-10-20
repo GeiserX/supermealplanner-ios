@@ -5,14 +5,16 @@ on:
     - cron: "30 1 * * *"
   workflow_dispatch:
 
-permissions:
-  actions: write
-  issues: write
-  pull-requests: write
+# Nothing at the top level, so a job added later starts with none of these.
+permissions: {}
 
 jobs:
   stale:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write        # actions/stale saves its processing state between runs
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/stale@v11
         with:
