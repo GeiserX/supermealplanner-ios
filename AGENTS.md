@@ -14,7 +14,11 @@ network.
 
 ## Repository rules
 
-- Licence: GPL-3.0-or-later.
+- Licence: MPL-2.0. Not GPL: Apple's App Store terms add restrictions on top of the copy you
+  download, which the GPL forbids, so a GPL app and the store it ships from contradict each
+  other. MPL keeps the copyleft where it matters — a change to a file here stays open — without
+  that contradiction. The server is AGPL-3.0-or-later and stays that way; this app only talks
+  to it over HTTP.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org). Versions follow semver.
 - Every change reaches `main` through a pull request with green CI. Never force push, never rewrite
   pushed history.
