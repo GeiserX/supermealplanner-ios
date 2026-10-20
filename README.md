@@ -103,4 +103,5 @@ from.
 
 ## Licence
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
+MPL-2.0. See [LICENSE](LICENSE). The server is AGPL-3.0-or-later; this app is a separate
+program that talks to it over HTTP.
