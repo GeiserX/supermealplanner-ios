@@ -44,6 +44,7 @@ Shared/           compiled into the app, the widget and the tests
 SuperMealPlanner/        AppModel plus one view per screen
 SuperMealPlannerWidget/  the widget: reads the cache, never the network
 SuperMealPlannerTests/   the client against a stubbed server, the shapes, the cache
+SuperMealPlannerUITests/ one test that pairs for real; skipped unless handed a server
 ```
 
 ## Rules the code depends on
