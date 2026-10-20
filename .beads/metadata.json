@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "supermealplanner_ios",
+  "project_id": "33d0f14b-b858-4f9c-9aa5-8b41c144e399"
+}
