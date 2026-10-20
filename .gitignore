@@ -1,0 +1,12 @@
+# The project is generated from project.yml; never commit it.
+*.xcodeproj/
+*.xcworkspace/
+build/
+DerivedData/
+.DS_Store
+xcuserdata/
+*.ipa
+*.xcarchive
+*.mobileprovision
+*.p12
+*.p8

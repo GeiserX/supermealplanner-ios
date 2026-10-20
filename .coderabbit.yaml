@@ -1,0 +1,19 @@
+language: en
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "Shared/**"
+      instructions: >-
+        Compiled into the app, the widget and the tests. The bearer token must never reach
+        UserDefaults, the cache or a log line. Every network call goes through Client.send.
+    - path: "**/*.swift"
+      instructions: >-
+        The app recomputes nothing the server already computes. A cached answer must be shown with
+        the time it was fetched, never as if it were live.
