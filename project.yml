@@ -104,6 +104,19 @@ targets:
           CODE_SIGN_IDENTITY: Apple Distribution
           PROVISIONING_PROFILE_SPECIFIER: SuperMealPlanner Widget App Store
 
+  SuperMealPlannerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SuperMealPlannerUITests
+    dependencies:
+      - target: SuperMealPlanner
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.geiserx.supermealplanner.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: SuperMealPlanner
+
   SuperMealPlannerTests:
     type: bundle.unit-test
     platform: iOS
@@ -122,8 +135,9 @@ schemes:
         SuperMealPlanner: all
         SuperMealPlannerWidget: all
         SuperMealPlannerTests: [test]
+        SuperMealPlannerUITests: [test]
     test:
-      targets: [SuperMealPlannerTests]
+      targets: [SuperMealPlannerTests, SuperMealPlannerUITests]
       gatherCoverageData: false
     run:
       config: Debug

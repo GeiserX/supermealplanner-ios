@@ -81,7 +81,21 @@ Shared/           compiled into the app, the widget and the tests
 SuperMealPlanner/ the app: AppModel plus one view per screen
 SuperMealPlannerWidget/  the home screen widget, which reads the cache and never the network
 SuperMealPlannerTests/   the client against a stubbed server, the shapes, the cache
+SuperMealPlannerUITests/ one test that pairs against a real server, for the check before a release
 ```
+
+The UI test is skipped unless it is handed a server and a code, which keeps both out of the
+repository and out of CI:
+
+```bash
+echo '{"server":"comidas.example.com","code":"418203"}' > /tmp/smp-ui.json
+xcodebuild test -project SuperMealPlanner.xcodeproj -scheme SuperMealPlanner \
+  -destination "platform=iOS Simulator,id=$(scripts/pick-simulator.sh)" \
+  -only-testing SuperMealPlannerUITests -resultBundlePath build/ui.xcresult
+```
+
+It walks every tab and attaches a screenshot of each, which is where the App Store screenshots come
+from.
 
 ## Licence
 
