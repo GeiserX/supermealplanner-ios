@@ -65,8 +65,9 @@ xcodebuild test -project SuperMealPlanner.xcodeproj -scheme SuperMealPlanner \
 ```
 
 CI runs the same on every pull request, then builds the Release configuration unsigned.
-`release.yml` archives and uploads to TestFlight when a `vX.Y.Z` tag that matches
-`MARKETING_VERSION` lands on main with green CI. It needs these repository secrets:
+A merge to main that bumps `MARKETING_VERSION` is a release: once CI is green on that commit,
+`release.yml` archives it, uploads it to TestFlight with the commit count as the build number, and
+tags it `vX.Y.Z`. A `vX.Y.Z` tag pushed by hand releases too. It needs these repository secrets:
 
 | Secret | |
 |---|---|

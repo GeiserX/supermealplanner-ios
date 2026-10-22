@@ -1,10 +1,16 @@
 name: Release to TestFlight
 
-# Push a tag vX.Y.Z that matches MARKETING_VERSION in project.yml. Each upload needs a
-# CURRENT_PROJECT_VERSION higher than the last one App Store Connect received.
+# A release is a merge to main that changes MARKETING_VERSION in project.yml: once CI is green on
+# that commit, this archives it, uploads it to TestFlight and tags it vX.Y.Z. A tag pushed by hand
+# still releases, as before. The build number is the commit count of main, so every upload is
+# higher than the last one App Store Connect received.
 on:
   push:
     tags: ["v*"]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -15,38 +21,77 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  decide:
+    name: Is this a new version
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.version.outputs.PUBLISH }}
+      version: ${{ steps.version.outputs.VERSION }}
+      sha: ${{ steps.version.outputs.SHA }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - id: version
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          v=$(awk '/^ *MARKETING_VERSION:/ {print $2; exit}' project.yml)
+          [ -n "$v" ] || { echo "::error::no MARKETING_VERSION in project.yml"; exit 1; }
+          echo "VERSION=$v" >> "$GITHUB_OUTPUT"
+          echo "SHA=$SHA" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            echo "PUBLISH=true" >> "$GITHUB_OUTPUT"
+          elif git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null; then
+            echo "v$v is released already: nothing to upload"
+            echo "PUBLISH=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "PUBLISH=true" >> "$GITHUB_OUTPUT"
+          fi
+
   testflight:
     name: Archive and upload
+    needs: decide
+    if: needs.decide.outputs.publish == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
+    permissions:
+      contents: write # to tag the released commit
+      actions: read
     env:
       TEAM_ID: 624WUVM8B4
       APP_PROFILE_NAME: SuperMealPlanner App Store
       WIDGET_PROFILE_NAME: SuperMealPlanner Widget App Store
+      SHA: ${{ needs.decide.outputs.sha }}
+      VERSION: ${{ needs.decide.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.decide.outputs.sha }}
           fetch-depth: 0
 
-      - name: Check the tag is on main and CI passed there
+      - name: Check the commit is on main and CI passed there
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git fetch --no-tags origin main
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::$GITHUB_REF_NAME points at $GITHUB_SHA, which is not on main"
+          if ! git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "::error::$SHA is not on main"
             exit 1
           fi
           conclusion=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main \
-            --commit "$GITHUB_SHA" --json conclusion --jq '.[0].conclusion // "none"')
+            --commit "$SHA" --json conclusion --jq '.[0].conclusion // "none"')
           if [ "$conclusion" != success ]; then
-            echo "::error::CI on main for $GITHUB_SHA is '$conclusion', not success"
+            echo "::error::CI on main for $SHA is '$conclusion', not success"
             exit 1
           fi
 
-      - name: Check the tag matches project.yml
+      - name: Check a pushed tag matches project.yml
+        if: github.event_name == 'push'
         run: |
-          VERSION=$(awk '/^ *MARKETING_VERSION:/ {print $2; exit}' project.yml)
           if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match MARKETING_VERSION $VERSION in project.yml"
             exit 1
@@ -118,6 +163,7 @@ jobs:
             -project SuperMealPlanner.xcodeproj -scheme SuperMealPlanner -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/SuperMealPlanner.xcarchive" \
+            CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \
             | grep -E "error:|warning: .*\.swift|\*\* ARCHIVE"
 
       - name: Export the IPA
@@ -159,6 +205,12 @@ jobs:
           chmod 600 "$KEY"
           xcrun altool --upload-app -t ios -f "$RUNNER_TEMP/export/SuperMealPlanner.ipa" \
             --apiKey "$APPSTORE_KEY_ID" --apiIssuer "$APPSTORE_ISSUER_ID"
+
+      - name: Tag the released commit
+        if: github.event_name == 'workflow_run'
+        run: |
+          git tag "v$VERSION" "$SHA"
+          git push origin "v$VERSION"
 
       - name: Remove signing material
         if: always()
