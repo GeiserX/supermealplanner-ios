@@ -13,7 +13,7 @@ settings:
   base:
     # Version and build number live only here. A merge that bumps MARKETING_VERSION is released to
     # TestFlight by release.yml, which sets the build number to the commit count of main.
-    MARKETING_VERSION: 0.1.1
+    MARKETING_VERSION: 0.2.0
     CURRENT_PROJECT_VERSION: 1
     DEVELOPMENT_TEAM: 624WUVM8B4
     SWIFT_VERSION: "5.0"

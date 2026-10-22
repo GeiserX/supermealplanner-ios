@@ -59,10 +59,15 @@ final class AppModel {
         self.meta = cache.read(Cache.Key.meta, as: Meta.self)?.value
     }
 
-    var paired: Bool { account != nil && token != nil }
+    var paired: Bool { account != nil && (token != nil || isDemo) }
+
+    /// Showing the invented household from `DemoServer` instead of a real server.
+    var isDemo: Bool { account?.server == DemoServer.address }
 
     /// The client for the paired server. nil before pairing, which is the only state without one.
+    /// In the demo it carries no token and its session answers from `DemoServer`.
     var client: Client? {
+        if isDemo { return Client(server: DemoServer.address, token: nil, session: DemoServer.session) }
         guard let account, let token else { return nil }
         return Client(server: account.server, token: token, session: session, deviceName: Self.deviceName)
     }
@@ -100,6 +105,22 @@ final class AppModel {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    /// Open the invented household. The account is remembered like a real one, so the demo survives
+    /// a relaunch and the widget shows its plan; no token is written, and any old one is dropped.
+    func startDemo() async {
+        vault.delete()
+        token = nil
+        cache.clear()
+        DemoServer.shared.reset()
+        let account = DemoServer.account
+        account.save()
+        self.account = account
+        self.person = account.person
+        self.meta = try? await client?.meta()
+        if let meta { cache.write(Cache.Key.meta, meta) }
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
     /// Forget this server. The token goes first: a leftover address is harmless, a leftover token is
     /// the one thing that still opens the household's data.
     func unpair() {
@@ -110,6 +131,7 @@ final class AppModel {
         person = nil
         meta = nil
         cache.clear()
+        DemoServer.shared.reset()
         WidgetCenter.shared.reloadAllTimelines()
     }
 

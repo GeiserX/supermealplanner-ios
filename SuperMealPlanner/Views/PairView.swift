@@ -70,6 +70,19 @@ struct PairView: View {
                     }
                     .disabled(busy || address.isEmpty || (found != nil && digits.count < 6))
                 }
+
+                Section {
+                    Button(action: demo) {
+                        HStack {
+                            Spacer()
+                            Label("Try the demo", systemImage: "sparkles")
+                            Spacer()
+                        }
+                    }
+                    .disabled(busy)
+                } footer: {
+                    Text("No server yet? See the app with an invented household. Leave it any time from the banner at the top.")
+                }
             }
             .navigationTitle("Comidas")
             .onAppear { field = .address }
@@ -77,6 +90,15 @@ struct PairView: View {
     }
 
     private var digits: String { code.filter(\.isNumber) }
+
+    private func demo() {
+        busy = true
+        problem = nil
+        Task {
+            defer { busy = false }
+            await model.startDemo()
+        }
+    }
 
     private func go() {
         busy = true

@@ -13,6 +13,9 @@ What is stored on the phone:
 - the last answer from each screen, so the app works without a signal and the widget has something
   to show.
 
+**Try the demo** shows an invented household that is built into the app. It is not fetched from
+any server, and no token is created for it.
+
 Deleting the app, or unpairing in **Me → Server**, removes all of it from the phone. Nothing is sent
 anywhere else, by anyone, at any time.
 
