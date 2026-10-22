@@ -259,7 +259,13 @@ struct Shopping: Codable, Sendable {
     var labels: [String: String] = [:]
     var stores: [StoreList] = []
     var ticked: [String] = []
+    var tickedOrder: [String] = []
     var have: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case monday, view, views, labels, stores, ticked, have
+        case tickedOrder = "ticked_order"
+    }
 
     struct View: Codable, Hashable, Identifiable, Sendable {
         var id: String
@@ -290,13 +296,36 @@ struct Shopping: Codable, Sendable {
         var product: String?
         var packs: Double?
         var price: Double?
+        var position: Int?
         var id: String { ingredient }
+    }
+}
+
+extension Shopping.StoreList.Section {
+    /// The section as the web page shows it: what is still to buy first, in the section's usual
+    /// order (the server's `position`), then what is ticked, the first ticked first. `ticked` is the
+    /// week's ticks in the order they were made, so a tick here or on another phone moves the row
+    /// at once, without asking for the whole list again.
+    func ordered(ticked: [String]) -> [Shopping.Line] {
+        var rank: [String: Int] = [:]
+        for (n, id) in ticked.enumerated() where rank[id] == nil { rank[id] = n }
+        let usual = lines.enumerated().map { (line: $0.element, at: $0.element.position ?? $0.offset) }
+        let toBuy = usual.filter { rank[$0.line.ingredient] == nil }.sorted { $0.at < $1.at }
+        let done = usual.filter { rank[$0.line.ingredient] != nil }
+            .sorted { rank[$0.line.ingredient, default: 0] < rank[$1.line.ingredient, default: 0] }
+        return toBuy.map { $0.line } + done.map { $0.line }
     }
 }
 
 struct Ticked: Codable, Sendable {
     var monday: String?
     var ticked: [String] = []
+    var tickedOrder: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case monday, ticked
+        case tickedOrder = "ticked_order"
+    }
 }
 
 struct Have: Codable, Sendable {
