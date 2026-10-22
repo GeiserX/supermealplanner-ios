@@ -56,6 +56,7 @@ Shared/           compiled into the app, the widget and the tests
   Client.swift    the only place that talks to a server; every refusal is named here
   Account.swift   the keychain item, the remembered server, address parsing
   Cache.swift     the last good answer per screen, in the app group
+  Demo.swift      "Try the demo": an invented household answered by a URLProtocol, never a server
 SuperMealPlanner/        AppModel plus one view per screen
 SuperMealPlannerWidget/  the widget: reads the cache, never the network
 SuperMealPlannerTests/   the client against a stubbed server, the shapes, the cache
@@ -80,6 +81,8 @@ SuperMealPlannerUITests/ one test that pairs for real; skipped unless handed a s
   back and says why; it does not leave a lie on screen.
 - **Fields are added, never renamed,** inside api version 1. Decoding must survive both an unknown
   field and a missing one — but a field of the wrong type still throws.
+- **The demo answers every route the client calls.** A new method on `Client` needs its route in
+  `DemoServer.respond`; `DemoTests` walks every call and fails on a 404. Demo content is invented.
 - Meal names, section fallbacks and every string the app itself writes are in the app's own
   language, not the server's locale.
 - The app icon is `docs/images/icon.svg` rendered square and flattened, so the PNG in the asset

@@ -29,6 +29,9 @@ To take a phone away — lost, sold, or an ex-flatmate — use `/devices` in the
 phones** in the app. The next call that phone makes gets a 401 and the app returns to the pairing
 screen by itself.
 
+No server yet? **Try the demo** on the pairing screen opens the whole app on an invented household,
+answered from inside the app. Ticks, votes and log entries work until you tap **Leave demo**.
+
 ## What it shows
 
 | Screen | |
@@ -83,6 +86,7 @@ Shared/           compiled into the app, the widget and the tests
   Client.swift    the only place that talks to a server
   Account.swift   the keychain item, the remembered server, address parsing
   Cache.swift     the last good answer per screen, in the app group
+  Demo.swift      the invented household "Try the demo" answers from
 SuperMealPlanner/ the app: AppModel plus one view per screen
 SuperMealPlannerWidget/  the home screen widget, which reads the cache and never the network
 SuperMealPlannerTests/   the client against a stubbed server, the shapes, the cache
