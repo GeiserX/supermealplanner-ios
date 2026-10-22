@@ -45,12 +45,17 @@ jobs:
           echo "SHA=$SHA" >> "$GITHUB_OUTPUT"
           if [ "$GITHUB_EVENT_NAME" = push ]; then
             echo "PUBLISH=true" >> "$GITHUB_OUTPUT"
-          elif git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null; then
-            echo "v$v is released already: nothing to upload"
-            echo "PUBLISH=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "PUBLISH=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          # 0: the tag exists, 2: it does not; anything else is a failed lookup, never a release
+          rc=0
+          git ls-remote --exit-code --tags origin "refs/tags/v$v" >/dev/null || rc=$?
+          case $rc in
+            0) echo "v$v is released already: nothing to upload"
+               echo "PUBLISH=false" >> "$GITHUB_OUTPUT" ;;
+            2) echo "PUBLISH=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::could not look up the tag v$v (git ls-remote exit $rc)"; exit 1 ;;
+          esac
 
   testflight:
     name: Archive and upload
