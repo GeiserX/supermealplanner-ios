@@ -25,6 +25,17 @@ network.
 - No AI attribution anywhere: no `Co-Authored-By` trailers, no "Generated with" lines.
 - Never commit a secret, a signing certificate, a provisioning profile or an App Store Connect key.
 
+## The app and the web page go together
+
+The server's web page and this app show the same household: today's plates, the week, the shopping
+list, the cooking sheet. A change to how one of them behaves usually belongs in the other too. When
+a change lands here, check whether the web page needs it (in the server repository), and the other
+way round. What the app shows comes computed from `/api/v1`, so a rule changes on the server, and
+the app only follows.
+
+A merge that bumps `MARKETING_VERSION` (patch for a fix or a small change) is what ships it to
+TestFlight; without the bump a merged change never reaches a phone.
+
 ## Build and test
 
 `project.yml` is the single source of truth (targets, settings, version, build number); the
