@@ -61,6 +61,35 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(list.have, ["salt"])
     }
 
+    func testASectionKeepsWhatIsLeftToBuyOnTopAndTheBasketBelowInTickOrder() throws {
+        let list: Shopping = try decode("""
+        {"monday":"2026-10-19","stores":[{"id":"shop","name":"Shop","sections":[{"section":"veg",
+          "lines":[{"ingredient":"leek","name":"Leek","position":1},
+                   {"ingredient":"onion","name":"Onion","position":3},
+                   {"ingredient":"pepper","name":"Pepper","position":2},
+                   {"ingredient":"carrot","name":"Carrot","position":0}]}]}],
+         "ticked":["onion","pepper"],"ticked_order":["onion","pepper"]}
+        """)
+        XCTAssertEqual(list.tickedOrder, ["onion", "pepper"])
+        let section = try XCTUnwrap(list.stores.first?.sections.first)
+        func names(_ ticked: [String]) -> [String] { section.ordered(ticked: ticked).map(\.ingredient) }
+        XCTAssertEqual(names(list.tickedOrder), ["carrot", "leek", "onion", "pepper"])
+        // A new tick goes to the end of its section.
+        XCTAssertEqual(names(["onion", "pepper", "carrot"]), ["leek", "onion", "pepper", "carrot"])
+        // An untick goes back among what is left to buy, at its usual place.
+        XCTAssertEqual(names(["pepper"]), ["carrot", "leek", "onion", "pepper"])
+        XCTAssertEqual(names([]), ["carrot", "leek", "pepper", "onion"])
+    }
+
+    func testTheWeeksTicksCarryTheOrderTheyWereMadeIn() throws {
+        let ticks: Ticked = try decode("""
+        {"ok":true,"monday":"2026-10-19","ticked":["milk","salt"],"ticked_order":["salt","milk"],
+         "ticked_at":{"salt":"2026-10-20T18:30:00+00:00"}}
+        """)
+        XCTAssertEqual(ticks.ticked, ["milk", "salt"])
+        XCTAssertEqual(ticks.tickedOrder, ["salt", "milk"])
+    }
+
     func testPairingReadsTheTokenAndWhoItBelongsTo() throws {
         let paired: Paired = try decode("""
         {"token":"abc","device_id":3,"device":"iPhone de Ana","person":"ana",

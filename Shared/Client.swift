@@ -139,6 +139,11 @@ struct Client: Sendable {
         try await send("GET", "/list", query: ["d": d.map(Dates.key), "store": store])
     }
 
+    /// Only the week's ticks: small enough to ask every few seconds while the list is open.
+    func ticks(_ d: Date? = nil) async throws -> Ticked {
+        try await send("GET", "/list/ticks", query: ["d": d.map(Dates.key)])
+    }
+
     func progress() async throws -> Progress { try await send("GET", "/progress") }
 
     func devices() async throws -> Devices { try await send("GET", "/devices") }

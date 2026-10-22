@@ -55,6 +55,20 @@ final class ClientTests: XCTestCase {
         XCTAssertEqual(sent["d"] as? String, "2026-10-21")
     }
 
+    func testTheTicksAloneAreAskedForTheWeek() async throws {
+        StubServer.answer = { _ in
+            .init(body: Data(#"{"ok":true,"monday":"2026-10-19","ticked":["eggs","milk"],"ticked_order":["milk","eggs"]}"#.utf8))
+        }
+        let got = try await client().ticks(Dates.date("2026-10-21")!)
+        XCTAssertEqual(got.tickedOrder, ["milk", "eggs"])
+        let request = try XCTUnwrap(StubServer.seen.first)
+        XCTAssertEqual(request.httpMethod, "GET")
+        let url = try XCTUnwrap(request.url)
+        XCTAssertEqual(url.path, "/api/v1/list/ticks")
+        let query = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
+        XCTAssertEqual(query.first { $0.name == "d" }?.value, "2026-10-21")
+    }
+
     func testFourOhOneMeansThisPhoneIsNotPairedAnyMore() async {
         StubServer.answer = { _ in .init(status: 401, body: Data(#"{"detail":"pair this device first"}"#.utf8)) }
         do {

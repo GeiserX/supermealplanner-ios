@@ -3,6 +3,10 @@
 //  So a tick moves at once and the server catches up: the row flips locally, the POST goes out, and
 //  if it fails the row flips back and says why. The ticks are the household's, not this phone's —
 //  the same list on the laptop shows them, because both read one database.
+//
+//  Each section shows what is still to buy first and what is in the basket below, the first ticked
+//  first, as the web page does. While the list is open it asks for the week's ticks every few
+//  seconds, so a tick made on another phone or on the web page moves the row here too.
 
 import SwiftUI
 
@@ -13,6 +17,7 @@ struct ShoppingView: View {
     @State private var store: String?
     @State private var state: Loaded<Shopping> = .loading
     @State private var ticked: Set<String> = []
+    @State private var tickOrder: [String] = []
     @State private var have: Set<String> = []
     @State private var inFlight: Set<String> = []
     @State private var problem: String?
@@ -45,6 +50,7 @@ struct ShoppingView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .animation(.default, value: tickOrder)
             .navigationTitle("Shopping")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -59,6 +65,7 @@ struct ShoppingView: View {
             }
             .refreshable { await load() }
             .task(id: Dates.key(monday) + "|" + (store ?? "")) { await load() }
+            .task(id: Dates.key(monday)) { await follow() }
         }
     }
 
@@ -72,9 +79,29 @@ struct ShoppingView: View {
             try await $0.shopping(monday, store: store)
         }
         if let list = state.value {
-            ticked = Set(list.ticked)
+            apply(list.ticked, order: list.tickedOrder)
             have = Set(list.have)
         }
+    }
+
+    /// Ask for the week's ticks every few seconds while the list is on screen. A tick of ours still
+    /// on its way wins: its own answer will carry the server's state.
+    private func follow() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled, inFlight.isEmpty, state.value != nil,
+                  let client = model.client else { continue }
+            if let got = try? await client.ticks(monday), !Task.isCancelled, inFlight.isEmpty {
+                apply(got.ticked, order: got.tickedOrder)
+            }
+        }
+    }
+
+    /// The server's ticks replace ours. A server that does not send the order yet still has them
+    /// below what is left to buy.
+    private func apply(_ ids: [String], order: [String]) {
+        ticked = Set(ids)
+        tickOrder = order.isEmpty ? ids : order
     }
 
     @ViewBuilder
@@ -84,7 +111,8 @@ struct ShoppingView: View {
         }
         ForEach(list.stores) { shop in
             ForEach(shop.sections) { section in
-                let lines = section.lines.filter { !hideTicked || !ticked.contains($0.ingredient) }
+                let lines = section.ordered(ticked: tickOrder)
+                    .filter { !hideTicked || !ticked.contains($0.ingredient) }
                 if !lines.isEmpty {
                     Section {
                         ForEach(lines) { line in
@@ -112,16 +140,29 @@ struct ShoppingView: View {
     private func tick(_ line: Shopping.Line, on: Bool) {
         guard let client = model.client else { return }
         let id = line.ingredient
-        if on { ticked.insert(id) } else { ticked.remove(id) }
+        let was = tickOrder.firstIndex(of: id)
+        tickOrder.removeAll { $0 == id }
+        if on {
+            ticked.insert(id)
+            tickOrder.append(id)
+        } else {
+            ticked.remove(id)
+        }
         inFlight.insert(id)
         problem = nil
         Task {
             defer { inFlight.remove(id) }
             do {
                 let got = try await client.tick(id, on: on, d: monday)
-                ticked = Set(got.ticked)
+                apply(got.ticked, order: got.tickedOrder)
             } catch {
-                if on { ticked.remove(id) } else { ticked.insert(id) }
+                tickOrder.removeAll { $0 == id }
+                if on {
+                    ticked.remove(id)
+                } else {
+                    ticked.insert(id)
+                    tickOrder.insert(id, at: min(was ?? tickOrder.count, tickOrder.count))
+                }
                 problem = error.localizedDescription
             }
         }
