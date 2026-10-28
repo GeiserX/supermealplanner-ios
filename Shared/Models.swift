@@ -267,9 +267,10 @@ struct Shopping: Codable, Sendable {
     var ticked: [String] = []
     var tickedOrder: [String] = []
     var have: [String] = []
+    var stocked: [String] = []    // ids the pantry holds enough of: off the list, not among the lines
 
     enum CodingKeys: String, CodingKey {
-        case monday, view, views, labels, stores, ticked, have
+        case monday, view, views, labels, stores, ticked, have, stocked
         case tickedOrder = "ticked_order"
     }
 
@@ -336,6 +337,30 @@ struct Ticked: Codable, Sendable {
 
 struct Have: Codable, Sendable {
     var have: [String] = []
+}
+
+/// What is at home, as the server works it out from ticks, the chat and the cooking.
+struct Pantry: Codable, Sendable {
+    var day: String?
+    var items: [Item] = []
+    var have: [Brief] = []
+
+    struct Item: Codable, Hashable, Identifiable, Sendable {
+        var ingredient: String
+        var name: String
+        var qty: Double?
+        var unit: String?
+        var amount: String?
+        var since: String?
+        var expires: String?    // the first day it is no longer good; nil keeps until used up
+        var id: String { ingredient }
+    }
+
+    struct Brief: Codable, Hashable, Identifiable, Sendable {
+        var ingredient: String
+        var name: String
+        var id: String { ingredient }
+    }
 }
 
 struct Devices: Codable, Sendable {

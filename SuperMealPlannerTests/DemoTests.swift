@@ -60,6 +60,9 @@ final class DemoTests: XCTestCase {
         let ticks = try await client.ticks()
         XCTAssertEqual(ticks.tickedOrder, list.tickedOrder)
 
+        let pantry = try await client.pantry()
+        XCTAssertEqual(Set(pantry.items.map(\.ingredient)), Set(list.ticked), "the basket is at home")
+
         let progress = try await client.progress()
         XCTAssertEqual(progress.people.count, 2)
         XCTAssertFalse(progress.people[0].weights.isEmpty)
@@ -99,6 +102,28 @@ final class DemoTests: XCTestCase {
         XCTAssertFalse(off.ticked.contains(line.ingredient))
         let after = try await client.ticks()
         XCTAssertFalse(after.ticked.contains(line.ingredient))
+    }
+
+    func testATickBringsTheLineIntoThePantryAndUntickingTakesItOut() async throws {
+        let list = try await client.shopping()
+        let line = try XCTUnwrap(list.stores.flatMap { $0.sections.flatMap(\.lines) }
+            .first { !list.ticked.contains($0.ingredient) })
+        let before = try await client.pantry()
+        XCTAssertFalse(before.items.contains { $0.ingredient == line.ingredient })
+
+        try await client.tick(line.ingredient, on: true)
+        let during = try await client.pantry()
+        let item = try XCTUnwrap(during.items.first { $0.ingredient == line.ingredient })
+        XCTAssertEqual(item.amount, line.amount, "a tick brings in what the line buys")
+
+        try await client.tick(line.ingredient, on: false)
+        let after = try await client.pantry()
+        XCTAssertFalse(after.items.contains { $0.ingredient == line.ingredient })
+
+        _ = try await client.have("rice", on: true)
+        let have = try await client.pantry()
+        XCTAssertEqual(have.have.map(\.ingredient), ["rice"])
+        _ = try await client.have("rice", on: false)
     }
 
     func testHaveItAtHomeTakesTheLineOffTheList() async throws {

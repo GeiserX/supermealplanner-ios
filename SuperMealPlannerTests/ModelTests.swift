@@ -72,12 +72,34 @@ final class ModelTests: XCTestCase {
          "stores":[{"id":"mercadona","name":"Mercadona","total":42.17,"unpriced":1,
            "sections":[{"section":"veg","lines":[{"ingredient":"onion","name":"Onion","section":"veg",
              "amount":"3 ud","qty":3.0,"unit":"ud","product":"Cebolla","packs":1,"price":1.2}]}]}],
-         "ticked":["onion"],"have":["salt"]}
+         "ticked":["onion"],"have":["salt"],"stocked":["rice"]}
         """)
         XCTAssertEqual(list.stores.first?.sections.first?.lines.first?.name, "Onion")
         XCTAssertEqual(list.labels["veg"], "Fruit and veg")
         XCTAssertEqual(list.ticked, ["onion"])
         XCTAssertEqual(list.have, ["salt"])
+        XCTAssertEqual(list.stocked, ["rice"])
+        // A server older than the pantry sends no `stocked`.
+        let older: Shopping = try decode(#"{"monday":"2026-10-19"}"#)
+        XCTAssertTrue(older.stocked.isEmpty)
+    }
+
+    func testThePantryCarriesAmountsAndWhenFreshFoodGoesOff() throws {
+        let pantry: Pantry = try decode("""
+        {"day":"2026-10-28",
+         "items":[{"ingredient":"hake","name":"Hake","qty":600.0,"unit":"g","amount":"600 g",
+                   "since":"2026-10-26","expires":"2026-10-29"},
+                  {"ingredient":"rice","name":"Rice","qty":1000.0,"unit":"g","amount":"1 kg",
+                   "since":"2026-10-20","expires":null}],
+         "have":[{"ingredient":"salt","name":"Salt"}]}
+        """)
+        XCTAssertEqual(pantry.items.map(\.name), ["Hake", "Rice"])
+        XCTAssertEqual(pantry.items[0].expires, "2026-10-29")
+        XCTAssertEqual(pantry.items[0].amount, "600 g")
+        XCTAssertNil(pantry.items[1].expires, "food that keeps until it is used up has no date")
+        XCTAssertEqual(pantry.have.map(\.ingredient), ["salt"])
+        XCTAssertThrowsError(try decode(#"{"items":[{"ingredient":"rice","name":"Rice","qty":"lots"}]}"#,
+                                        as: Pantry.self), "a field of the wrong type still throws")
     }
 
     func testASectionKeepsWhatIsLeftToBuyOnTopAndTheBasketBelowInTickOrder() throws {
