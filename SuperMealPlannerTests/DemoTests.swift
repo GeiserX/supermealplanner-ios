@@ -124,6 +124,13 @@ final class DemoTests: XCTestCase {
         let have = try await client.pantry()
         XCTAssertEqual(have.have.map(\.ingredient), ["rice"])
         _ = try await client.have("rice", on: false)
+
+        // «I have it» on something already in the basket keeps the basket's amount.
+        let basket = try XCTUnwrap(have.items.first)
+        _ = try await client.have(basket.ingredient, on: true)
+        let both = try await client.pantry()
+        XCTAssertEqual(both.items.first { $0.ingredient == basket.ingredient }?.amount, basket.amount)
+        _ = try await client.have(basket.ingredient, on: false)
     }
 
     func testHaveItAtHomeTakesTheLineOffTheList() async throws {

@@ -89,10 +89,11 @@ struct ShoppingView: View {
         await loadPantry()
     }
 
-    /// A server older than the pantry answers 404: then there is no pantry to show.
+    /// The pantry is what is at home now, so it shows under this week's list only. A server older
+    /// than the pantry answers 404: then there is no pantry to show. A 401 unpairs, as everywhere.
     private func loadPantry() async {
-        guard let client = model.client else { return }
-        pantry = try? await client.pantry()
+        let thisWeek = Calendar.current.isDate(monday, equalTo: Date(), toGranularity: .weekOfYear)
+        pantry = thisWeek ? await model.fetch(nil) { try await $0.pantry() }.value : nil
     }
 
     /// Ask for the week's ticks every few seconds while the list is on screen. A tick of ours still
