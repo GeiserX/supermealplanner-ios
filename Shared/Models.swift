@@ -103,7 +103,13 @@ struct Day: Codable, Sendable {
     struct MealBlock: Codable, Hashable, Identifiable, Sendable {
         var meal: String
         var dishes: [Dish] = []
+        /// Whether this is the meal of the moment, by the household's clock: it starts unfolded.
+        var open: Bool?
         var id: String { meal }
+
+        /// Unfolded as it was left by hand, else as the server judged it. A server that does not
+        /// send `open` leaves every meal unfolded, as before.
+        func isUnfolded(_ folds: [String: Bool]) -> Bool { folds[meal] ?? open ?? true }
     }
 
     struct Dish: Codable, Hashable, Identifiable, Sendable {

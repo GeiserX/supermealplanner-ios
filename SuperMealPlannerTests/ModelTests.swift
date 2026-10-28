@@ -31,6 +31,25 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(day.votes["lentils"], 1)
     }
 
+    func testOnlyTheMealOfTheMomentStartsUnfoldedUntilOneIsFoldedByHand() throws {
+        let day: Day = try decode("""
+        {"day":"2026-10-20","now":"13:05","meals":[
+          {"meal":"breakfast","hours":{"from":"00:00","until":"12:00"},"open":false,"dishes":[]},
+          {"meal":"lunch","hours":{"from":"12:00","until":"16:00"},"open":true,"dishes":[]},
+          {"meal":"dinner","dishes":[]}]}
+        """)
+        let breakfast = day.meals[0], lunch = day.meals[1], dinner = day.meals[2]
+        XCTAssertEqual(lunch.open, true)
+        XCTAssertFalse(breakfast.isUnfolded([:]))
+        XCTAssertTrue(lunch.isUnfolded([:]))
+        // A server without `open` folds nothing away.
+        XCTAssertTrue(dinner.isUnfolded([:]))
+
+        let folds = ["breakfast": true, "lunch": false]
+        XCTAssertTrue(breakfast.isUnfolded(folds))
+        XCTAssertFalse(lunch.isUnfolded(folds))
+    }
+
     func testAFieldThisVersionDoesNotKnowIsIgnored() throws {
         // The contract is that fields are added inside api 1. An app in a pocket must survive that.
         let day: Day = try decode("""
