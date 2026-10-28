@@ -35,6 +35,16 @@ struct RecipeView: View {
 
     @ViewBuilder
     private func body(for full: RecipeFull) -> some View {
+        if let total = full.together {
+            Section {
+                ForEach(total.lines, id: \.self) { Text($0) }
+            } header: {
+                Text("Everyone together")
+            } footer: {
+                Text("\(total.kcal ?? 0) kcal · \(Int(total.proteinG ?? 0)) g protein")
+            }
+        }
+
         if let plate = full.plate {
             Section {
                 ForEach(plate.lines, id: \.self) { Text($0) }

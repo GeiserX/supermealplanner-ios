@@ -115,7 +115,12 @@ struct Day: Codable, Sendable {
     struct Dish: Codable, Hashable, Identifiable, Sendable {
         var recipe: RecipeBrief
         var plates: [Plate] = []
+        /// The dish for everyone who eats it together, shaped as a plate, as the server adds it up.
+        var total: Plate?
         var id: String { recipe.id }
+
+        /// The total as the web page shows it: only when more than one person shares the dish.
+        var together: Plate? { plates.count > 1 ? total : nil }
     }
 
     struct Totals: Codable, Hashable, Identifiable, Sendable {
@@ -216,6 +221,12 @@ struct RecipeFull: Codable, Sendable {
     var recipe: Full
     var plate: Plate?
     var vote: Int?
+    /// Every person's plate that day, and the dish for all of them together, shaped as a plate.
+    var plates: [Plate] = []
+    var total: Plate?
+
+    /// The total as the web page shows it: only when more than one person has a plate.
+    var together: Plate? { plates.count > 1 ? total : nil }
 
     struct Full: Codable, Sendable {
         var id: String
