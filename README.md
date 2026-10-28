@@ -38,7 +38,7 @@ answered from inside the app. Ticks, votes and log entries work until you tap **
 |---|---|
 | **Today** | Every meal in the order it is eaten, with each person's plate: the ingredient lines already scaled, the calories and the protein. 👍/👎 on a dish feeds the next draw. |
 | **Week** | Seven days of dish names, today marked. |
-| **Shopping** | The week's list per store, in aisle order, with the ticks shared live with the laptop and with everyone else's phone. Swipe for «I have it at home». |
+| **Shopping** | The week's list per store, in aisle order, with the ticks shared live with the laptop and with everyone else's phone. Swipe for «I have it at home». Below it, the pantry: what is at home and when fresh food goes off. |
 | **Kitchen** | The week's jobs with their times — defrost, cook, shop — and a batch afternoon's sheet: every dish, how much, which container goes where. |
 | **Me** | Weight, waist and the day's numbers, how the trend is going, the paired phones and the server. |
 | **Widget** | What's for the next meal, on the home screen. |

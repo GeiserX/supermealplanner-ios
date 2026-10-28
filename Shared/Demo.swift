@@ -271,6 +271,7 @@ final class DemoServer: @unchecked Sendable {
         case ("GET", "/list/ticks"): return json(ticked(d))
         case ("POST", "/list/tick"): return tick(body, d: d)
         case ("POST", "/list/have"): return markHave(body)
+        case ("GET", "/pantry"): return json(pantry(today))
         case ("POST", "/rate"): return rate(body, person: person)
         case ("POST", "/log"): return log(body, person: person, today: today)
         case ("GET", "/progress"): return json(progress(today))
@@ -415,7 +416,7 @@ final class DemoServer: @unchecked Sendable {
         return out
     }
 
-    private func shopping(_ d: Date, store: String?) -> [String: Any] {
+    private func shopping(_ d: Date, store: String?, hidingHave: Bool = true) -> [String: Any] {
         let monday = Self.monday(of: d)
         var need: [String: Double] = [:]
         let portions = Self.people.reduce(0) { $0 + $1.factor }
@@ -426,7 +427,7 @@ final class DemoServer: @unchecked Sendable {
                 }
             }
         }
-        for id in have { need[id] = nil }
+        if hidingHave { for id in have { need[id] = nil } }
         let week = ticks[Self.key(monday)] ?? []
         let tickedAt = Dictionary(week.map { ($0.id, Self.stamp($0.at)) }, uniquingKeysWith: { a, _ in a })
         let shown = Self.stores.filter { store == nil || store == "all" || store == $0.id }
@@ -467,6 +468,26 @@ final class DemoServer: @unchecked Sendable {
         let week = ticks[monday] ?? []
         return ["ok": true, "monday": monday, "ticked": week.map(\.id).sorted(), "ticked_order": week.map(\.id),
                 "ticked_at": Dictionary(week.map { ($0.id, Self.stamp($0.at)) }, uniquingKeysWith: { a, _ in a })]
+    }
+
+    /// This week's ticks are what is at home, at the amount their line buys; fresh food keeps five
+    /// days. The demo does not take the cooking out, the server does.
+    private func pantry(_ today: Date) -> [String: Any] {
+        let monday = Self.monday(of: today)
+        let lines = (shopping(today, store: nil, hidingHave: false)["stores"] as? [[String: Any]] ?? [])
+            .flatMap { $0["sections"] as? [[String: Any]] ?? [] }
+            .flatMap { $0["lines"] as? [[String: Any]] ?? [] }
+        let byID = Dictionary(lines.map { ($0["ingredient"] as? String ?? "", $0) }, uniquingKeysWith: { a, _ in a })
+        let fresh: Set<String> = ["produce", "bakery", "dairy", "meat-fish"]
+        let items = (ticks[Self.key(monday)] ?? []).compactMap { tick -> [String: Any]? in
+            guard let line = byID[tick.id], let ingredient = Self.ingredients[tick.id] else { return nil }
+            let since = Self.calendar.startOfDay(for: tick.at)
+            return ["ingredient": tick.id, "name": ingredient.name, "qty": line["qty"] ?? 0,
+                    "unit": ingredient.unit, "amount": line["amount"] ?? "", "since": Self.key(since),
+                    "expires": fresh.contains(ingredient.section) ? Self.key(Self.add(5, to: since)) : NSNull()]
+        }.sorted { ($0["name"] as? String ?? "") < ($1["name"] as? String ?? "") }
+        return ["day": Self.key(today), "items": items,
+                "have": have.compactMap { id in Self.ingredients[id].map { ["ingredient": id, "name": $0.name] } }]
     }
 
     private func progress(_ today: Date) -> [String: Any] {

@@ -7,6 +7,9 @@
 //  Each section shows what is still to buy first and what is in the basket below, the first ticked
 //  first, as the web page does. While the list is open it asks for the week's ticks every few
 //  seconds, so a tick made on another phone or on the web page moves the row here too.
+//
+//  Below the list is the pantry, as the server works it out: a tick brings in what the line buys,
+//  the cooking takes it out, fresh food goes off. The app only shows it.
 
 import SwiftUI
 
@@ -19,6 +22,7 @@ struct ShoppingView: View {
     @State private var ticked: Set<String> = []
     @State private var tickOrder: [String] = []
     @State private var have: Set<String> = []
+    @State private var pantry: Pantry?
     @State private var inFlight: Set<String> = []
     @State private var problem: String?
     @State private var hideTicked = false
@@ -82,6 +86,14 @@ struct ShoppingView: View {
             apply(list.ticked, order: list.tickedOrder)
             have = Set(list.have)
         }
+        await loadPantry()
+    }
+
+    /// The pantry is what is at home now, so it shows under this week's list only. A server older
+    /// than the pantry answers 404: then there is no pantry to show. A 401 unpairs, as everywhere.
+    private func loadPantry() async {
+        let thisWeek = Calendar.current.isDate(monday, equalTo: Date(), toGranularity: .weekOfYear)
+        pantry = thisWeek ? await model.fetch(nil) { try await $0.pantry() }.value : nil
     }
 
     /// Ask for the week's ticks every few seconds while the list is on screen. A tick of ours still
@@ -133,6 +145,9 @@ struct ShoppingView: View {
                 }
             }
         }
+        if let pantry {
+            PantrySection(pantry: pantry, stocked: Set(list.stocked))
+        }
     }
 
     /// Flip now, tell the server, flip back if it refuses. The server's answer replaces the set, so
@@ -155,6 +170,7 @@ struct ShoppingView: View {
             do {
                 let got = try await client.tick(id, on: on, d: monday)
                 apply(got.ticked, order: got.tickedOrder)
+                await loadPantry()   // the tick brought the line in, or took it out again
             } catch {
                 tickOrder.removeAll { $0 == id }
                 if on {
@@ -183,6 +199,47 @@ struct ShoppingView: View {
                 if on { have.remove(id) } else { have.insert(id) }
                 problem = error.localizedDescription
             }
+        }
+    }
+}
+
+struct PantrySection: View {
+    var pantry: Pantry
+    var stocked: Set<String>
+
+    var body: some View {
+        Section {
+            if pantry.items.isEmpty && pantry.have.isEmpty {
+                Text("Nothing yet: what you tick on the list comes in here.").foregroundStyle(.secondary)
+            }
+            ForEach(pantry.items) { item in
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.name)
+                        if stocked.contains(item.ingredient) {
+                            Text("Enough for this week: off the list").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        if let amount = item.amount { Text(amount).font(.callout) }
+                        if let expires = item.expires {
+                            Text("Goes off \(Dates.short(expires))").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            ForEach(pantry.have) { item in
+                HStack {
+                    Text(item.name)
+                    Spacer()
+                    Label("Have it", systemImage: "house").labelStyle(.iconOnly).foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("In the pantry")
+        } footer: {
+            Text("Worked out by the app: a tick adds what you bought, each cooking takes its ingredients out and fresh food goes off. Tell the assistant when something ran out or how much there is.")
         }
     }
 }
