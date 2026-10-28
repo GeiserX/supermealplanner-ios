@@ -11,6 +11,8 @@ struct TodayView: View {
     @State private var date = Date()
     @State private var state: Loaded<Day> = .loading
     @State private var person: String?
+    /// The meals folded or unfolded by hand while this page is on screen.
+    @State private var folds: [String: Bool] = [:]
 
     var body: some View {
         NavigationStack {
@@ -48,6 +50,7 @@ struct TodayView: View {
 
     private func shift(_ days: Int) {
         date = Calendar.current.date(byAdding: .day, value: days, to: date) ?? date
+        folds = [:]
     }
 
     private func load() async {
@@ -71,13 +74,26 @@ struct TodayView: View {
         }
 
         ForEach(day.meals) { block in
+            let unfolded = block.isUnfolded(folds)
             Section {
-                ForEach(block.dishes) { dish in
-                    DishRow(dish: dish, person: person ?? day.person,
-                            vote: day.votes[dish.recipe.id], date: date)
+                if unfolded {
+                    ForEach(block.dishes) { dish in
+                        DishRow(dish: dish, person: person ?? day.person,
+                                vote: day.votes[dish.recipe.id], date: date)
+                    }
                 }
             } header: {
-                Label(Names.meal(block.meal), systemImage: Names.icon(block.meal))
+                Button {
+                    folds[block.meal] = !unfolded
+                } label: {
+                    HStack {
+                        Label(Names.meal(block.meal), systemImage: Names.icon(block.meal))
+                        Spacer()
+                        Image(systemName: unfolded ? "chevron.down" : "chevron.right")
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
 
