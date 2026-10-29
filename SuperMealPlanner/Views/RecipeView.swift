@@ -41,7 +41,10 @@ struct RecipeView: View {
             } header: {
                 Text("Everyone together")
             } footer: {
-                Text("\(total.kcal ?? 0) kcal · \(Int(total.proteinG ?? 0)) g protein")
+                // Only what the server sent: a missing figure is not a zero.
+                let figures = [total.kcal.map { "\($0) kcal" }, total.proteinG.map { "\(Int($0)) g protein" }]
+                    .compactMap { $0 }
+                if !figures.isEmpty { Text(figures.joined(separator: " · ")) }
             }
         }
 
