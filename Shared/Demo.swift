@@ -310,7 +310,8 @@ final class DemoServer: @unchecked Sendable {
                 totals[p.id, default: (0, 0)].protein += recipe.proteinG * p.factor
                 return plate(recipe, for: p)
             }
-            return ["meal": meal, "dishes": [["recipe": Self.brief(recipe), "plates": plates]]]
+            return ["meal": meal, "dishes": [["recipe": Self.brief(recipe), "plates": plates,
+                                              "total": together(recipe)]]]
         }
         let tomorrow = Self.planned("lunch", on: Self.add(1, to: d))
         return [
@@ -411,6 +412,8 @@ final class DemoServer: @unchecked Sendable {
                 "nutrition": ["kcal": recipe.kcal, "protein_g": recipe.proteinG],
             ] as [String: Any],
             "plate": plate(recipe, for: p),
+            "plates": Self.people.map { plate(recipe, for: $0) },
+            "total": together(recipe),
         ]
         if let vote = votes[person]?[recipe.id] { out["vote"] = vote }
         return out
@@ -560,6 +563,13 @@ final class DemoServer: @unchecked Sendable {
         ["person": p.id, "name": p.name, "recipe": Self.brief(recipe), "factor": p.factor,
          "lines": recipe.items.map { Self.line($0.id, $0.qty * p.factor) },
          "kcal": Int(recipe.kcal * p.factor), "protein_g": (recipe.proteinG * p.factor).rounded()]
+    }
+
+    private func together(_ recipe: Recipe) -> [String: Any] {
+        let factor = Self.people.reduce(0) { $0 + $1.factor }
+        return ["recipe": Self.brief(recipe), "factor": factor,
+                "lines": recipe.items.map { Self.line($0.id, $0.qty * factor) },
+                "kcal": Int(recipe.kcal * factor), "protein_g": (recipe.proteinG * factor).rounded()]
     }
 
     private static func brief(_ r: Recipe) -> [String: Any] {

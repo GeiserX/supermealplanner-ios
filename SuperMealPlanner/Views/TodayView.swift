@@ -140,6 +140,13 @@ struct DishRow: View {
                     if vote == 1 { Image(systemName: "hand.thumbsup.fill").foregroundStyle(.green) }
                     if vote == -1 { Image(systemName: "hand.thumbsdown.fill").foregroundStyle(.orange) }
                 }
+                if let total = dish.together {
+                    Text("Everyone together").font(.caption.weight(.semibold))
+                    ForEach(total.lines, id: \.self) { line in
+                        Text(line).font(.subheadline)
+                    }
+                    Divider()
+                }
                 if let plate = dish.plates.first(where: { $0.person == person }) ?? dish.plates.first {
                     ForEach(plate.lines, id: \.self) { line in
                         Text(line).font(.subheadline).foregroundStyle(.secondary)

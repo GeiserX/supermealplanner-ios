@@ -31,6 +31,35 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(day.votes["lentils"], 1)
     }
 
+    func testADishSharedByMoreThanOnePersonShowsTheTotalForEveryoneTogether() throws {
+        let day: Day = try decode("""
+        {"day":"2026-10-20","meals":[{"meal":"lunch","dishes":[
+          {"recipe":{"id":"soup","name":"Soup","tags":[]},
+           "plates":[{"person":"ana","name":"Ana","factor":1.0,"lines":["200 g leeks (≈ 1 leek)"]},
+                     {"person":"ben","name":"Ben","factor":1.5,"lines":["300 g leeks (≈ 1.5 leeks)"]}],
+           "total":{"recipe":{"id":"soup","name":"Soup","tags":[]},"factor":2.5,
+             "lines":["500 g leeks (≈ 2.5 leeks)"],"kcal":900,"protein_g":40.0}},
+          {"recipe":{"id":"bread","name":"Bread","tags":[]},
+           "plates":[{"person":"ana","name":"Ana","factor":1.0,"lines":["50 g bread"]}],
+           "total":{"factor":1.0,"lines":["50 g bread"]}},
+          {"recipe":{"id":"fruit","name":"Fruit","tags":[]},"plates":[]}]}]}
+        """)
+        let dishes = try XCTUnwrap(day.meals.first?.dishes)
+        XCTAssertEqual(dishes[0].together?.lines, ["500 g leeks (≈ 2.5 leeks)"])
+        XCTAssertEqual(dishes[0].together?.factor, 2.5)
+        XCTAssertNil(dishes[1].together, "one person alone needs no total")
+        XCTAssertNil(dishes[2].together, "an older server without the total still decodes")
+
+        let recipe: RecipeFull = try decode("""
+        {"recipe":{"id":"soup","name":"Soup"},"plate":{"factor":1.0,"lines":["200 g leeks"]},
+         "plates":[{"person":"ana","name":"Ana","factor":1.0,"lines":["200 g leeks"]},
+                   {"person":"ben","name":"Ben","factor":1.5,"lines":["300 g leeks"]}],
+         "total":{"factor":2.5,"lines":["500 g leeks (≈ 2.5 leeks)"],"kcal":900,"protein_g":40.0}}
+        """)
+        XCTAssertEqual(recipe.together?.lines, ["500 g leeks (≈ 2.5 leeks)"])
+        XCTAssertEqual(recipe.plates.map(\.person), ["ana", "ben"])
+    }
+
     func testOnlyTheMealOfTheMomentStartsUnfoldedUntilOneIsFoldedByHand() throws {
         let day: Day = try decode("""
         {"day":"2026-10-20","now":"13:05","meals":[

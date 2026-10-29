@@ -26,7 +26,9 @@ final class DemoUITests: XCTestCase {
 
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10), "the demo did not open")
         XCTAssertTrue(app.buttons["Leave demo"].exists, "the demo banner is missing")
-        XCTAssertTrue(labelled("Apple with peanut butter").waitForExistence(timeout: 10),
+        // The first dish's «Everyone together» block is on the first screen whatever the day. A dish
+        // further down, such as the snack, has no row until the list scrolls to it.
+        XCTAssertTrue(labelled("Everyone together").waitForExistence(timeout: 10),
                       "today's plan did not load")
         shot("1-today")
 

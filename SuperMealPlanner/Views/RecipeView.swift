@@ -35,6 +35,19 @@ struct RecipeView: View {
 
     @ViewBuilder
     private func body(for full: RecipeFull) -> some View {
+        if let total = full.together {
+            Section {
+                ForEach(total.lines, id: \.self) { Text($0) }
+            } header: {
+                Text("Everyone together")
+            } footer: {
+                // Only what the server sent: a missing figure is not a zero.
+                let figures = [total.kcal.map { "\($0) kcal" }, total.proteinG.map { "\(Int($0)) g protein" }]
+                    .compactMap { $0 }
+                if !figures.isEmpty { Text(figures.joined(separator: " · ")) }
+            }
+        }
+
         if let plate = full.plate {
             Section {
                 ForEach(plate.lines, id: \.self) { Text($0) }

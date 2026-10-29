@@ -23,6 +23,7 @@ final class DemoTests: XCTestCase {
         XCTAssertTrue(day.planned)
         XCTAssertEqual(day.meals.map(\.meal), ["breakfast", "lunch", "snack", "dinner"])
         XCTAssertTrue(day.meals.allSatisfy { $0.dishes.first?.plates.count == 2 })
+        XCTAssertTrue(day.meals.allSatisfy { $0.dishes.first?.together?.lines.isEmpty == false })
         XCTAssertEqual(day.people.count, 2)
         let samsDay = try await client.day(Date(), person: "sam")
         XCTAssertEqual(samsDay.person, "sam")
@@ -47,6 +48,7 @@ final class DemoTests: XCTestCase {
             XCTAssertFalse(recipe.recipe.ingredients.isEmpty)
             XCTAssertFalse(recipe.recipe.steps.isEmpty)
             XCTAssertNotNil(recipe.plate)
+            XCTAssertNotNil(recipe.together)
         }
 
         let list = try await client.shopping()
