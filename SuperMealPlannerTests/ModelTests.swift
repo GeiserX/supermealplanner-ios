@@ -197,6 +197,27 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(dish.containers.first?.defrostOn, "2026-10-25")
         XCTAssertEqual(dish.containers.first?.servings["ana"], 2.0)
     }
+
+    func testACookingSheetCarriesTheTimeForTheAmountCooked() throws {
+        let sheet: Cook = try decode("""
+        {"day":"2026-10-18","cook_minutes":100,"cook_minutes_text":"1 h 40 min",
+         "sessions":[{"morning":false,"at":"17:00","recipes":["stew"],"cook_minutes":100,
+           "cook_minutes_text":"1 h 40 min"}],
+         "dishes":[{"recipe":{"id":"stew","name":"Stew","minutes":60,"tags":[]},"servings":6.0,
+           "cook_minutes":100,"cook_minutes_text":"1 h 40 min","lines":[],"containers":[]}]}
+        """)
+        XCTAssertEqual(sheet.cookMinutes, 100)
+        XCTAssertEqual(sheet.cookMinutesText, "1 h 40 min")
+        let dish = try XCTUnwrap(sheet.dishes.first)
+        XCTAssertEqual(dish.cookMinutes, 100)
+        XCTAssertEqual(dish.cookMinutesText, "1 h 40 min")
+        XCTAssertEqual(dish.recipe.minutes, 60)
+
+        // A server from before these estimates still decodes, with no time to show.
+        let older: Cook = try decode(#"{"day":"2026-10-18","dishes":[{"recipe":{"id":"stew","name":"Stew"}}]}"#)
+        XCTAssertNil(older.cookMinutesText)
+        XCTAssertNil(older.dishes.first?.cookMinutesText)
+    }
 }
 
 extension ModelTests {

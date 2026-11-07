@@ -373,13 +373,26 @@ final class DemoServer: @unchecked Sendable {
 
     private func cook(_ d: Date) -> [String: Any] {
         let portions = Self.people.reduce(0) { $0 + $1.factor }
+        let batches = batchRecipes(d)
+        // An invented estimate for the demo: half the recipe's time grows with the amount cooked.
+        func minutes(_ recipe: Recipe, _ servings: Double) -> Int {
+            let half = Double(recipe.minutes) / 2
+            let raw = half + half * max(servings / 2, 1)
+            return Int((raw / 5).rounded(.up)) * 5
+        }
+        let total = batches.reduce(0) { $0 + minutes($1.recipe, portions * Double($1.days.count)) }
         return ["day": Self.key(d),
-                "dishes": batchRecipes(d).map { batch -> [String: Any] in
+                "cook_minutes": total,
+                "cook_minutes_text": Self.duration(total),
+                "dishes": batches.map { batch -> [String: Any] in
                     let servings = portions * Double(batch.days.count)
                     let names = batch.days.map { Self.weekday($0) }
+                    let time = minutes(batch.recipe, servings)
                     return [
                         "recipe": Self.brief(batch.recipe),
                         "servings": servings,
+                        "cook_minutes": time,
+                        "cook_minutes_text": Self.duration(time),
                         "morning": false,
                         "eat_on": batch.days.map(Self.key),
                         "for_text": "For " + Self.joined(names) + " lunch",
@@ -602,6 +615,13 @@ final class DemoServer: @unchecked Sendable {
 
     private static func number(_ value: Double) -> String {
         value == value.rounded() ? String(Int(value)) : String(format: "%.1f", value)
+    }
+
+    /// "45 min", "2 h", "2 h 15 min", as the server writes a duration.
+    private static func duration(_ minutes: Int) -> String {
+        let h = minutes / 60, m = minutes % 60
+        if h == 0 { return "\(m) min" }
+        return m == 0 ? "\(h) h" : "\(h) h \(m) min"
     }
 
     private static var calendar: Calendar {
