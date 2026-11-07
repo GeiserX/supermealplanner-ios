@@ -101,9 +101,14 @@ struct CookList: View {
             case .live(let sheet), .cached(let sheet, _):
                 if sheet.dishes.isEmpty {
                     Section { Text("Nothing to batch this day.").foregroundStyle(.secondary) }
+                } else if let total = sheet.cookMinutesText {
+                    Section { LabeledContent("Cooking time") { Text("≈ \(total)") } }
                 }
                 ForEach(sheet.dishes) { dish in
                     Section {
+                        if let time = dish.cookMinutesText {
+                            Label("≈ \(time)", systemImage: "timer").font(.subheadline)
+                        }
                         if let text = dish.forText {
                             Label(text, systemImage: "calendar").font(.subheadline)
                         }

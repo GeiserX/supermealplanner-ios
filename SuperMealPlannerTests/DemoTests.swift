@@ -40,6 +40,8 @@ final class DemoTests: XCTestCase {
         let cook = try await client.cook()
         XCTAssertFalse(cook.dishes.isEmpty)
         XCTAssertTrue(cook.dishes.allSatisfy { !$0.lines.isEmpty && !$0.containers.isEmpty })
+        XCTAssertNotNil(cook.cookMinutesText)
+        XCTAssertTrue(cook.dishes.allSatisfy { $0.cookMinutesText != nil })
 
         // Every dish of the week opens as a recipe.
         for id in Set(week.days.flatMap { $0.meals.map(\.recipe.id) }) {

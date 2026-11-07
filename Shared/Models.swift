@@ -182,11 +182,23 @@ struct Tasks: Codable, Sendable {
 
 struct Cook: Codable, Sendable {
     var day: String
+    /// How long the whole day's cooking takes, every session together, as the server estimates it.
+    var cookMinutes: Int?
+    var cookMinutesText: String?
     var dishes: [Batch] = []
+
+    enum CodingKeys: String, CodingKey {
+        case day, dishes
+        case cookMinutes = "cook_minutes"
+        case cookMinutesText = "cook_minutes_text"
+    }
 
     struct Batch: Codable, Hashable, Identifiable, Sendable {
         var recipe: RecipeBrief
         var servings: Double?
+        /// The estimate for the amount cooked that day; the recipe's own time stays in `recipe.minutes`.
+        var cookMinutes: Int?
+        var cookMinutesText: String?
         var morning: Bool = false
         var eatOn: [String] = []
         var forText: String?
@@ -198,6 +210,8 @@ struct Cook: Codable, Sendable {
         enum CodingKeys: String, CodingKey {
             case recipe, servings, morning, lines, containers
             case eatOn = "eat_on"
+            case cookMinutes = "cook_minutes"
+            case cookMinutesText = "cook_minutes_text"
             case forText = "for_text"
             case splitText = "split_text"
         }
